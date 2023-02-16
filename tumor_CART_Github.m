@@ -210,8 +210,8 @@ elseif decision == 1
     %% Make heatmap of final tumor size 
     figure;
     h1 = heatmap(b2,k3,Tfinal2');
-    xlabel('Rate of cytokine stimulation'); % b2
-    ylabel('Rate of tumor killing');        % k3
+    xlabel('Rate of cytokine stimulation (b_x_y)'); 
+    ylabel('Rate of tumor killing (k_T)');        
     grid off;
     h1.Title= 'Final tumor size';
     CustomXLabels = string(b2);
@@ -224,8 +224,8 @@ elseif decision == 1
     %% Make heatmap of max cytokine value
     figure;
     h1 = heatmap(b2,k3,max_cytokine2');
-    xlabel('Rate of cytokine stimulation'); % b2
-    ylabel('Rate of tumor killing');        % k3
+    xlabel('Rate of cytokine stimulation (b_x_y)'); 
+    ylabel('Rate of tumor killing (k_T)');  
     grid off;
     h1.Title= 'Maximum cytokine value';
     h1.XDisplayLabels = CustomXLabels;
@@ -240,17 +240,16 @@ elseif decision == 1
     imagesc(b2,k3,param_regime2')
     colormap(map)
     cbh = colorbar(); 
-    set(cbh, 'YTick', [1, 2, 3, 4], ...
-    'YTickLabel', {'P1', 'P2', 'P3', 'P4'})
-    xlabel('Rate of cytokine stimulation'); % b2
-    ylabel('Rate of tumor killing');        % k3
+    set(cbh, 'YTick', [1, 2, 3, 4],'YTickLabel', {'P1', 'P2', 'P3', 'P4'})
+    xlabel('Rate of cytokine stimulation (b_x_y)'); 
+    ylabel('Rate of tumor killing (k_T)');  
     title('D1 Parameter Regime');
 
     %% Make heatmap of max cytokine rate
     figure;
     h1 = heatmap(b2,k3,max_rate_cytokine2');
-    xlabel('Rate of cytokine stimulation'); % b2 = b_xy
-    ylabel('Rate of tumor killing');        % k3 = k_T
+    xlabel('Rate of cytokine stimulation (b_x_y)'); 
+    ylabel('Rate of tumor killing (k_T)');  
     grid off;
     h1.Title= 'Maximum rate of cytokine change';
     h1.XDisplayLabels = CustomXLabels;
@@ -261,10 +260,9 @@ elseif decision == 1
     imagesc(b2,k3,param_regime_rate2')
     colormap(map)
     cbh = colorbar(); 
-    set(cbh, 'YTick', [1, 2, 3, 4], ...
-    'YTickLabel', {'P1', 'P2', 'P3', 'P4'})
-    xlabel('Rate of cytokine stimulation'); % b2
-    ylabel('Rate of tumor killing');        % k3
+    set(cbh, 'YTick', [1, 2, 3, 4], 'YTickLabel', {'P1', 'P2', 'P3', 'P4'})
+    xlabel('Rate of cytokine stimulation (b_x_y)'); 
+    ylabel('Rate of tumor killing (k_T)');  
     title('D3 Parameter Regime');  
     
     %% Compare two cytokine storm definitions
@@ -275,12 +273,8 @@ elseif decision == 1
         100*num_discrepancies/num_total);
     figure;
     imagesc(b2,k3,def_discrepancy')
-    %colormap(map)
-    %cbh = colorbar(); 
-    %set(cbh, 'YTick', [1, 2, 3, 4], ...
-    %'YTickLabel', {'P1', 'P2', 'P3', 'P4'})
-    xlabel('Rate of cytokine stimulation'); % b2
-    ylabel('Rate of tumor killing');        % k3
+    xlabel('Rate of cytokine stimulation (b_x_y)'); 
+    ylabel('Rate of tumor killing (k_T)');  
     title('Parameter Regime Discrepancy');  
     
     %% Now pick a point in P2 (effective treatment, storm): done manually
