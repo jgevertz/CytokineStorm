@@ -1,7 +1,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 %                                                                       %
 % Implementation of Cytokine Storm Model and Analysis                   %
-% Written by Irina Kareva and Jana Gevertz. Last Update: 1/6/2023       %
+% Written by Irina Kareva and Jana Gevertz. Last Update: 2/15/2023      %
 % - Default initial conditions and parameter values are set from lines  %
 %   33 to 60. Any can be changed by user.                               %
 % - Dose/schedule are set at lines 62-66. Any can be changed by user.   %
@@ -14,10 +14,10 @@
 %   1) Assess if tumor was effectively treated. We say treatment is     %
 %      effective if tumor size is <=0.1*carrying capacity = 0.1.        %
 %   2) Assess if a cytokine storm occurred using one of two             %
-%   definitions. Definition D1: a storm occurs if the absolute value of %
-%   cytokines levels crosses the threshold value of y_U. Definition D2: %
-%   a storm occurs if the maximal rate of change of cytokine level      %
-%   crosses the threshold value of storm_cutoff_rate = 1.4.             %
+%      definitions. Definition D1: storm occurs if the absolute value   %
+%      of cytokine levels crosses the threshold of y_U. Definition D2:  %
+%      storm occurs if the maximal rate of change of cytokine level     %
+%      crosses the threshold of storm_cutoff_rate = 0.417.              %
 % - If 1 is entered at prompt, the code will also analyze a single      %
 %   paremeterization that falls in the "effective treatment with        %
 %   cytokine storm" regime and ask: can we find a different             %
@@ -35,7 +35,7 @@ p.X0=0;
 p.Y0=0; 
 p.Cin0=0; 
 p.T0=0.1; 
-in_cond=[p.X0 p.Y0 p.Cin0 p.T0]; %initial conditions 
+in_cond=[p.X0 p.Y0 p.Cin0 p.T0]; 
 
 %% Fixed params
 % Immune cells: x equation 
@@ -122,19 +122,20 @@ if decision == 0 % Just plots solution curves
 
 elseif decision == 1
     %% Sets parameter range to search, and discretization
-    num_pts = 20; % can sample more or less points in range by changing this
+    num_pts = 120; % can sample more or less points in range by changing this
 	effective_cutoff = 0.1*p.K; % cutoff set to 1/10 of carrying capacity
 	storm_cutoff = max(p.y1,p.y2); % above larger threshold is "storm"
-    storm_cutoff_rate = 1.4;  % determined looking at min value of rate on cytokine heatmap
-                              % for the "surface" that formed in space      
+    storm_cutoff_rate = 0.417; % determined looking at min value of rate on cytokine 
+                               % heatmap for the "surface" that formed in space      
     
     % Rate of tumor killing, k3 = k_T, varies from 0.004 to 0.164                         
     k3_min = 0.004; k3_max = 0.164; 
     k3_step = (k3_max-k3_min)/num_pts;
     k3 = linspace(k3_min,k3_max,num_pts+1);   
     
-    % Rate of cytokine stimulation, b2 = b_xy, varies from 0.4 to 2
-    b2_min = 0.4; b2_max = 2; 
+    % Rate of cytokine stimulation, b2 = b_xy, varies from 0.6 to 1.55
+    b2_min = 0.6; b2_max = 1.55; 
+    %b2_min = 0.968; b2_max = 0.988; % to zoom in
 	b2_step = (b2_max-b2_min)/num_pts;
 	b2 = linspace(b2_min,b2_max,num_pts+1); 
         
@@ -187,7 +188,7 @@ elseif decision == 1
             fprintf('\tTfinal2 = %f\n\tmax(cytokine_rate) = %f\n',...
                 Tfinal2(i,j),max_rate_cytokine2(i,j)); 
             
-            % Determine which regime we are in for D3                                % space
+            % Determine which regime we are in for D3                               
             if( (Tfinal2(i,j)<=effective_cutoff) && (max_rate_cytokine2(i,j)<=storm_cutoff_rate) )
                 % P1) Effective treatment with no cytokine storm (best case)
                 param_regime_rate2(i,j) = 1; 
@@ -213,6 +214,12 @@ elseif decision == 1
     ylabel('Rate of tumor killing');        % k3
     grid off;
     h1.Title= 'Final tumor size';
+    CustomXLabels = string(b2);
+    CustomXLabels(mod(1:length(b2),10) ~= 0) = "";
+    h1.XDisplayLabels = CustomXLabels;
+    CustomYLabels = string(k3);
+    CustomYLabels(mod(1:length(k3),10) ~= 0) = "";
+    h1.YDisplayLabels = CustomYLabels;
     
     %% Make heatmap of max cytokine value
     figure;
@@ -221,6 +228,8 @@ elseif decision == 1
     ylabel('Rate of tumor killing');        % k3
     grid off;
     h1.Title= 'Maximum cytokine value';
+    h1.XDisplayLabels = CustomXLabels;
+    h1.YDisplayLabels = CustomYLabels;
     
     %% Make heatmap of parameter regime according to max cytokine value
     map = [1 1 1 % white
@@ -244,6 +253,8 @@ elseif decision == 1
     ylabel('Rate of tumor killing');        % k3 = k_T
     grid off;
     h1.Title= 'Maximum rate of cytokine change';
+    h1.XDisplayLabels = CustomXLabels;
+    h1.YDisplayLabels = CustomYLabels;
 
     %% Make heatmap of parameter regime according to max cytokine rate
     figure;
@@ -254,11 +265,28 @@ elseif decision == 1
     'YTickLabel', {'P1', 'P2', 'P3', 'P4'})
     xlabel('Rate of cytokine stimulation'); % b2
     ylabel('Rate of tumor killing');        % k3
-    title('D3 Parameter Regime');    
+    title('D3 Parameter Regime');  
+    
+    %% Compare two cytokine storm definitions
+    def_discrepancy = param_regime2-param_regime_rate2;
+    num_discrepancies = nnz(def_discrepancy);
+    num_total = size(def_discrepancy,1)*size(def_discrepancy,2);
+    fprintf('%f percent of classifications differ based on definition of storm\n',...
+        100*num_discrepancies/num_total);
+    figure;
+    imagesc(b2,k3,def_discrepancy')
+    %colormap(map)
+    %cbh = colorbar(); 
+    %set(cbh, 'YTick', [1, 2, 3, 4], ...
+    %'YTickLabel', {'P1', 'P2', 'P3', 'P4'})
+    xlabel('Rate of cytokine stimulation'); % b2
+    ylabel('Rate of tumor killing');        % k3
+    title('Parameter Regime Discrepancy');  
     
     %% Now pick a point in P2 (effective treatment, storm): done manually
-    p.b2 = 2; 
+    p.b2 = 1.55;  
     p.k3 = 0.15;
+    num_pts = 20; % can sample more or less points in range by changing this
     
     %% Preserve total adminstered dose at 10, and vary number and spacing of doses
     total_drug = p.doseD1;
@@ -316,31 +344,33 @@ elseif decision == 1
     %% Make heatmap of final tumor size in dose number-spacing space 
     figure;
     h1 = heatmap(doseNum,interval,Tfinal_control2');
-    xlabel('Number of Doses'); 
-    ylabel('Spacing between doses (hours)');                      
+    xlabel('Number of doses'); 
+    ylabel('Spacing between doses');                      
     grid off;
     h1.Title= 'Final tumor size';
     
     %% Make heatmap of max cytokine value in dose number-spacing space 
     figure;
     h1 = heatmap(doseNum,interval,max_cytokine_control2');
-    xlabel('Number of Doses'); 
-    ylabel('Spacing between doses (hours)');          
+    xlabel('Number of doses'); 
+    ylabel('Spacing between doses');          
     grid off;
     h1.Title= 'Maximum cytokine value';
       
     %% Make heatmap of parameter regime according to max cytokine value in dose number-spacing space 
     figure; 
-    imagesc(doseNum,interval,param_regime_control2')
+    im = imagesc(doseNum,interval,param_regime_control2'); 
     colormap(map)
     cbh = colorbar(); 
     set(cbh, 'YTick', [1, 2, 3, 4], ...
     'YTickLabel', {'P1', 'P2', 'P3', 'P4'})    
-    xlabel('Number of Doses'); 
-    ylabel('Spacing between doses (hours)');
+    xlabel('Number of doses'); 
+    ylabel('Spacing between doses');
     title('At fixed cumulative dose, can we control storm but preserve efficacy?');
+    im.CDataMapping = 'direct'; % ensures colormap works correctly, even if a value is skipped
 end
-toc
+toc;
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Functions
